@@ -85,7 +85,7 @@
         <label class="field">mascot image (optional)
           <input type="file" id="mascot" accept="image/*">
         </label>
-        <button id="clearmascot">use built-in</button>
+        <button id="clearmascot">use default</button>
       </div>
     </div>
 
@@ -111,11 +111,12 @@ Would you like help?
 * Construct a transparent rationalization
 * Learn to live with regret
 _ Don't show me this tip again</pre>
-      <p class="note">Local clone of <a href="https://kirk.is/tools/clippy/">kirk.is/tools/clippy</a>, with PNG export. The mascot here is an original drawing, not the Microsoft character; load your own art with the file picker if you want something else.</p>
+      <p class="note">Local clone of <a href="https://kirk.is/tools/clippy/">kirk.is/tools/clippy</a>, with PNG export. Mascot art comes from <code>assets/mascot.js</code> (<code>bin/fetch-mascot</code>); the file picker swaps in anything else.</p>
     </div>
   </div>
 </div>
 
+<script src="assets/mascot.js"></script>
 <script>
 const stage = document.getElementById('stage');
 const guts = document.getElementById('guts');
@@ -123,7 +124,14 @@ const sizeSel = document.getElementById('size');
 const bgSel = document.getElementById('bg');
 const mascotInput = document.getElementById('mascot');
 
-let mascotImg = null;
+let mascotImg = null;     // user-supplied override
+let defaultImg = null;    // assets/mascot.js, when it has been fetched
+
+if (typeof window.MASCOT_URL === 'string') {
+  const img = new Image();
+  img.onload = () => { defaultImg = img; update(); };
+  img.src = window.MASCOT_URL;        // data URL, so canvas export stays untainted
+}
 
 const CFG = {
   bubbleW: 0.66,
@@ -132,7 +140,7 @@ const CFG = {
   lh: 1.42,
   optIndent: 0.062,
   gap: 0.35,       // blank-line height, in text lines
-  mascot: 0.30,
+  mascotW: 0.42,
   bubbleFill: '#EEEE77',
   ink: '#111111',
 };
@@ -249,8 +257,10 @@ function render(canvas, S, bg) {
 
   const bubbleH = textH + pad * 2;
   const tail = S * 0.032;
-  const mh = CFG.mascot * S;
-  const totalH = bubbleH + tail + mh * 0.86;
+  const mh = CFG.mascotW * S;
+  const art0 = mascotImg || defaultImg;
+  const artH = art0 ? mh * (art0.height / art0.width) : mh;
+  const totalH = bubbleH + tail + artH * 0.88;
   const bx = (S - bw) / 2;
   let by = Math.max(S * 0.04, (S - totalH) / 2);
 
@@ -284,13 +294,11 @@ function render(canvas, S, bg) {
   }
 
   // mascot
+  const art = mascotImg || defaultImg;
   const mx = bx + bw * 0.10;
-  const my = by + bubbleH + tail - mh * 0.10;
-  if (mascotImg) {
-    const ar = mascotImg.width / mascotImg.height;
-    const w = ar >= 1 ? mh : mh * ar;
-    const h = ar >= 1 ? mh / ar : mh;
-    ctx.drawImage(mascotImg, mx, my + (mh - h) / 2, w, h);
+  const my = by + bubbleH + tail - mh * 0.12;
+  if (art) {
+    ctx.drawImage(art, mx, my, mh, mh * (art.height / art.width));
   } else {
     drawMascot(ctx, mx, my, mh);
   }

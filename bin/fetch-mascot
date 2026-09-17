@@ -1,0 +1,17 @@
+#!/bin/sh
+# Pull the mascot art from the original tool and inline it as a data URL.
+#
+# The art belongs to its owners; this is a local personal copy, so assets/ is
+# gitignored. Run this once after cloning to restore the real mascot. Without
+# it the generator falls back to a paperclip drawn in code.
+set -e
+dir=$(cd "$(dirname "$0")/.." && pwd)
+src=${1:-https://kirk.is/tools/clippy/clippy.webp}
+mkdir -p "$dir/assets"
+curl -fsSL -A "Mozilla/5.0" "$src" -o "$dir/assets/mascot.webp"
+{
+  printf 'window.MASCOT_URL = "data:image/webp;base64,'
+  base64 < "$dir/assets/mascot.webp" | tr -d '\n'
+  printf '";\n'
+} > "$dir/assets/mascot.js"
+echo "mascot: $(wc -c < "$dir/assets/mascot.webp" | tr -d ' ') bytes -> assets/mascot.js"
