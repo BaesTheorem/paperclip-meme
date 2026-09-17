@@ -1,1 +1,16 @@
+# The mascot art is a local copy from the source tool (bin/fetch-mascot), and
+# everything derived from it (scripts/make-icon.py)
 clippy.webp
+build/
+ios/web/
+ios/ClippyMeme/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+
+# Generated Xcode project (xcodegen generate in ios/) and build output
+ios/ClippyMeme.xcodeproj/
+ios/build/
+ios/DerivedData/
+
+# Per-machine signing
+ios/Config/Signing.xcconfig
+
+.DS_Store

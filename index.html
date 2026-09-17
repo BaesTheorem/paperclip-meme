@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>clippy joke meme generator</title>
 <style>
 body {
@@ -81,6 +82,12 @@ textarea {
 #status {
     margin-left: 12px;
     color: #777;
+}
+@media (max-width: 820px) {
+    .content { width: auto; padding: 0 12px; }
+    textarea { width: 100%; box-sizing: border-box; font-size: 16px; }
+    #export label { display: inline-block; margin: 8px 12px 0 0; }
+    pre.example { white-space: pre-wrap; }
 }
 </style>
 </head>
@@ -239,12 +246,26 @@ _ Don't show me this tip again
         const dw = w * scale, dh = h * scale;
         ctx.drawImage(img, (S - dw) / 2, (S - dh) / 2, dw, dh);
 
+        const shell = window.pywebview && window.pywebview.api && window.pywebview.api.save_file;
+        if (shell) {
+          const path = await shell('clippy-' + S + '.png', canvas.toDataURL('image/png'));
+          status.textContent = 'saved to ' + path;
+          return;
+        }
+        const native = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.savePng;
+        if (native) {
+          native.postMessage({ name: 'clippy-' + S + '.png', dataUrl: canvas.toDataURL('image/png') });
+          status.textContent = S + '\u00d7' + S + ' ready';
+          return;
+        }
         await new Promise(res => canvas.toBlob(blob => {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = 'clippy-' + S + '.png';
           a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+          // WKWebView hosts (the Mac app) only start reading the blob after
+          // the save panel closes, so a quick revoke hands them a dead URL
+          setTimeout(() => URL.revokeObjectURL(a.href), 120000);
           res();
         }, 'image/png'));
         status.textContent = S + '×' + S + ' saved';

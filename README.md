@@ -4,18 +4,60 @@ Local clone of [kirk.is/tools/clippy](https://kirk.is/tools/clippy/), the office
 joke meme generator: type a line of text plus a few fake radio buttons, get the yellow
 speech balloon and the helper graphic.
 
-The page is the original's markup, CSS and `update()`/`fixup()` script, unchanged. One
-thing is added: **a square PNG download**, so the result goes straight into a chat, a post,
-or a slide without cropping a screenshot yourself.
+The page is the original's markup, CSS and `update()`/`fixup()` script, unchanged. Added:
+**a square PNG download**, plus a Mac app and an iPhone app that wrap the same page.
 
-## Run
+## Layout
 
-    bin/fetch-mascot          # once: downloads clippy.webp from the source tool
-    bin/paperclip-meme        # serves on 127.0.0.1:5031 and opens it
+    index.html          the generator (the whole tool)
+    clippy.webp         mascot art, pulled by bin/fetch-mascot, gitignored
+    bin/fetch-mascot    downloads clippy.webp from the source tool
+    bin/serve           static server on 127.0.0.1:5031
+    bin/paperclip-meme  serve + open in the browser
+    scripts/make-icon.py  1024 iOS icon + Mac .icns from clippy.webp (gitignored outputs)
+    launchd/            agent that runs bin/serve for the Mac app
+    ios/                XcodeGen project for the iPhone app
+
+## Web
+
+    bin/fetch-mascot          # once
+    bin/paperclip-meme        # serves and opens http://127.0.0.1:5031/
 
 Served over HTTP rather than opened as a `file://` path on purpose: the export reads the
-image back out as a data URL, and both `fetch()` and canvas export are blocked on `file://`
-origins. `clippy.webp` is gitignored, so the art stays a local copy.
+image back as a data URL, and both `fetch()` and canvas export are blocked on `file://`.
+
+## Mac app
+
+`/Applications/Clippy Meme.app`, built with the harness `app-shell/build-app.sh`:
+
+    cp launchd/com.exobrain.paperclip-meme.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.exobrain.paperclip-meme.plist
+    python3 scripts/make-icon.py
+    "$HARNESS/app-shell/build-app.sh" "Clippy Meme" paperclip-meme http://127.0.0.1:5031/ \
+        com.exobrain.paperclip-meme --plist ~/Library/LaunchAgents/com.exobrain.paperclip-meme.plist \
+        --log ~/Library/Logs/exobrain/paperclip-meme.log --icon build/AppIcon.icns
+
+The launchd job runs `bin/serve` through `/bin/bash`: a bare `/usr/bin/python3` in
+`ProgramArguments` cannot read `~/Documents` under launchd (TCC), bash holds the grant and
+python inherits it. The app kickstarts that job, waits for the port, and opens the page in a
+WKWebView. Download goes through `window.pywebview.api.save_file` into `~/Downloads`, since
+an `<a download>` click inside WKWebView routes through a modal save panel whose download
+then reads the blob too late.
+
+## iPhone app
+
+`ios/` is a XcodeGen project: a SwiftUI shell around a WKWebView that serves the bundled
+`web/` folder (a copy of `index.html` + `clippy.webp`) through a custom `clippy://` scheme,
+so `fetch()` and canvas export work without a server. The page posts the PNG to a
+`savePng` message handler, which opens the share sheet (Save Image, AirDrop, Messages).
+
+    cp ios/Config/Signing.xcconfig.example ios/Config/Signing.xcconfig   # set your team
+    ios/scripts/build.sh              # unsigned compile check
+    ios/scripts/install.sh [UDID]     # signed build, install, launch on the paired phone
+
+`build.sh` refreshes `ios/web/` from the repo root and regenerates the icon if missing. The
+install script retries once, because a wireless `devicectl` install drops the tunnel on the
+first sustained transfer about half the time.
 
 ## Syntax
 
@@ -37,18 +79,15 @@ The textarea is the whole input, exactly as upstream:
 The meme is laid out by the browser, not redrawn. On download, the `#shot` subtree is
 cloned, the image is swapped for a data URL, the page's stylesheet is inlined, and the
 whole thing is serialized into an SVG `<foreignObject>` and drawn to a canvas. The PNG is
-the browser's own rendering of the same DOM you are looking at, down to the native radio
-and checkbox widgets.
+the browser's own rendering of the same DOM you are looking at, native radio and checkbox
+widgets included. Sizes 540 / 1080 / 2160, background white or transparent, meme scaled to
+92% of the square and centered.
 
-Two details that bite if you rebuild this:
+Details that bite if you rebuild this:
 
 - The `<foreignObject>` root does not inherit from `<body>`, so text falls back to serif.
   `rootStyle()` copies the computed font settings across.
 - `cloneNode` copies attributes, not state, so a ticked checkbox exports unticked unless
   `checked` is set on the clone explicitly.
-
-Sizes are 540 / 1080 / 2160, background white or transparent. The meme is scaled to 92% of
-the square and centered.
-
-Tested in Chromium. Safari's handling of `foreignObject` in an SVG image has historically
-been patchy; if the export comes out blank there, use Chrome.
+- Revoke the blob URL late (or not at all). WebKit hosts read it after the user finishes
+  with the save panel.
