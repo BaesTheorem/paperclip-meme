@@ -1,97 +1,126 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>office assistant meme generator</title>
+<title>clippy joke meme generator</title>
 <style>
-  :root {
-    --surface: #fbf8f4;
-    --surface-2: #f2ede6;
-    --outline: #c8c2b8;
-    --on-surface: #1c1b19;
-    --accent: #3b5f8a;
-  }
-  * { box-sizing: border-box; border-radius: 0 !important; }
-  body {
-    margin: 0;
-    background: var(--surface);
-    color: var(--on-surface);
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 15px;
-    line-height: 1.5;
-  }
-  .content { max-width: 1000px; margin: 0 auto; padding: 24px 20px 80px; }
-  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
-  h2 { font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin: 28px 0 8px; }
-  p.hint { margin: 0 0 16px; color: #5c574e; }
-  .cols { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
-  .col { flex: 1 1 380px; min-width: 320px; }
-  canvas#stage {
-    width: 100%; max-width: 480px; display: block;
-    border: 1px solid var(--outline);
-    background-image: linear-gradient(45deg, #e6e1d9 25%, transparent 25%, transparent 75%, #e6e1d9 75%),
-                      linear-gradient(45deg, #e6e1d9 25%, transparent 25%, transparent 75%, #e6e1d9 75%);
-    background-size: 16px 16px;
-    background-position: 0 0, 8px 8px;
-  }
-  textarea {
-    width: 100%; height: 230px; padding: 10px;
-    border: 1px solid var(--outline); background: #fff; color: inherit;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.5;
-    resize: vertical;
-  }
-  textarea:focus, select:focus, button:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
-  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #5c574e; }
-  select, button, input[type=file]::file-selector-button {
-    border: 1px solid var(--outline); background: var(--surface-2); color: inherit;
-    padding: 8px 12px; font: inherit; cursor: pointer;
-  }
-  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
-  button:active { transform: translateY(1px); }
-  pre.example { background: var(--surface-2); border: 1px solid var(--outline); padding: 12px; overflow-x: auto; font-size: 13px; }
-  .note { font-size: 13px; color: #5c574e; }
-  a { color: var(--accent); }
-  @media (prefers-reduced-motion: no-preference) { button { transition: none; } }
+body {
+    background-color: white;
+    color: black;
+    font-family: sans-serif;
+}
+a {
+    color: black;
+}
+.content {
+    width: 800px;
+    margin: auto;
+}
+.speech {
+    position: relative;
+    padding: 15px;
+    margin: 1em 0 3em;
+    background: #EEEE77;
+    width: 260px;
+    border-radius: 10px;
+}
+.triangle-right:after {
+    content: "";
+    position: absolute;
+    bottom: -20px;
+    left: 50px;
+    border-width: 20px 0 0 20px;
+    border-style: solid;
+    border-color: #EEEE77 transparent;
+    display: block;
+    width: 0;
+}
+#shot img {
+    position: relative;
+    top: -20px;
+    left: 40px;
+}
+.option {
+    display: flex;
+    /*margin-bottom: 4px;*/
+    align-items: start;
+    position: relative;
+    left: -8px;
+}
+#customize {
+    margin-top: 60px;
+}
+textarea {
+    width: 400px;
+    height: 200px;
+}
+/* --- added: PNG export --- */
+#shot {
+    display: inline-block;
+    padding: 10px;
+}
+#export {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #ccc;
+}
+#export button, #export select {
+    font: inherit;
+    padding: 6px 10px;
+    border: 1px solid #999;
+    background: #f2f2f2;
+    border-radius: 0;
+}
+#export button {
+    cursor: pointer;
+    font-weight: bold;
+}
+#export label {
+    margin-left: 12px;
+}
+#status {
+    margin-left: 12px;
+    color: #777;
+}
 </style>
 </head>
 <body>
-<div class="content">
-  <h1>office assistant meme generator</h1>
-  <p class="hint">Type below. The image updates as you type, and downloads as a square PNG.</p>
+  <div class="content">
+    <h1>clippy joke meme generator</h1>
 
-  <div class="cols">
-    <div class="col">
-      <canvas id="stage" width="1080" height="1080"></canvas>
-      <div class="row">
-        <button class="primary" id="download">Download square PNG</button>
-        <label class="field">size
-          <select id="size">
-            <option value="540">540</option>
-            <option value="1080" selected>1080</option>
-            <option value="2160">2160</option>
-          </select>
-        </label>
-        <label class="field">background
-          <select id="bg">
-            <option value="#ffffff" selected>white</option>
-            <option value="#1c1b19">black</option>
-            <option value="transparent">transparent</option>
-          </select>
-        </label>
+    <div id="shot">
+      <div id="speech" class="speech triangle-right">
+
+
+
+
       </div>
-      <div class="row">
-        <label class="field">mascot image (optional)
-          <input type="file" id="mascot" accept="image/*">
-        </label>
-        <button id="clearmascot">use default</button>
-      </div>
+      <img src="clippy.webp" width="200" crossorigin="anonymous">
     </div>
 
-    <div class="col">
-      <h2>customize text and options</h2>
-      <textarea id="guts" spellcheck="false">It looks like you're writing a letter.
+    <div id="export">
+      <button id="download">Download square PNG</button>
+      <label>size
+        <select id="size">
+          <option value="540">540</option>
+          <option value="1080" selected>1080</option>
+          <option value="2160">2160</option>
+        </select>
+      </label>
+      <label>background
+        <select id="bg">
+          <option value="#ffffff" selected>white</option>
+          <option value="transparent">transparent</option>
+        </select>
+      </label>
+      <span id="status"></span>
+    </div>
+
+    <div id="customize">
+    <h2>customize text and options</h2>
+    <p>Type below to immediately update the screenshot-able content above.
+    <p>(* for options, _ for checkbox)</p>
+    <textarea id="guts" onchange="update()" onkeyup="update()">It looks like you're writing a letter.
 
 Would you like help?
 
@@ -99,248 +128,133 @@ Would you like help?
 * Just type the letter without help
 _ Don't show me this tip again
 </textarea>
-      <p class="note">Lines starting with <code>*</code> become radio buttons, <code>_</code> becomes a checkbox. Blank lines are spacing.</p>
 
-      <h2>example</h2>
-<pre class="example">It looks like you are about to make a
-horrible life decision.
+<h2>Example</h2>
+<pre class="example">
+It looks like you are about to make a horrible life decision.
 
 Would you like help?
 
 * Reconsider my options
-* Construct a transparent rationalization
+* Construct a blatently transparent rationalization
 * Learn to live with regret
-_ Don't show me this tip again</pre>
-      <p class="note">Local clone of <a href="https://kirk.is/tools/clippy/">kirk.is/tools/clippy</a>, with PNG export. Mascot art comes from <code>assets/mascot.js</code> (<code>bin/fetch-mascot</code>); the file picker swaps in anything else.</p>
-    </div>
+_ Don't show me this tip again
+</pre>
   </div>
-</div>
+  </div>
+  <script>
+    function update(){
+        const lines = window.guts.value.split('\n');
+        window.speech.innerHTML = lines.map(line=>fixup(line)).join('<br>\n');
+    }
 
-<script src="assets/mascot.js"></script>
-<script>
-const stage = document.getElementById('stage');
-const guts = document.getElementById('guts');
-const sizeSel = document.getElementById('size');
-const bgSel = document.getElementById('bg');
-const mascotInput = document.getElementById('mascot');
+    function fixup(line) {
+        const firstChar = line.substr(0,1);
+        if(firstChar === '*' || firstChar === '_'){
+                const rest = line.substr(1);
+                return `<label class='option'><input type='${firstChar ==='*'?'radio':'checkbox'}'>&nbsp;<div>${rest}</div></label>`;
+        } else {
+            return line;
+        }
+    }
 
-let mascotImg = null;     // user-supplied override
-let defaultImg = null;    // assets/mascot.js, when it has been fetched
+    update();
+  </script>
 
-if (typeof window.MASCOT_URL === 'string') {
-  const img = new Image();
-  img.onload = () => { defaultImg = img; update(); };
-  img.src = window.MASCOT_URL;        // data URL, so canvas export stays untainted
-}
+  <script>
+    // --- added: square PNG export -------------------------------------------
+    // The meme is rendered by the browser's own layout engine, then that exact
+    // subtree is rasterized through an SVG <foreignObject>, so the PNG matches
+    // what is on screen instead of being redrawn by hand.
+    const shot = document.getElementById('shot');
+    const status = document.getElementById('status');
 
-const CFG = {
-  bubbleW: 0.66,
-  pad: 0.035,
-  font: 0.034,
-  lh: 1.42,
-  optIndent: 0.062,
-  gap: 0.35,       // blank-line height, in text lines
-  mascotW: 0.42,
-  bubbleFill: '#EEEE77',
-  ink: '#111111',
-};
+    const cssText = () =>
+      [...document.styleSheets]
+        .flatMap(sheet => { try { return [...sheet.cssRules]; } catch { return []; } })
+        .map(rule => rule.cssText)
+        .join('\n');
 
-function parseRows(src) {
-  return src.replace(/\s+$/, '').split('\n').map(line => {
-    const c = line.substr(0, 1);
-    if (c === '*') return { kind: 'radio', text: line.substr(1).trim() };
-    if (c === '_') return { kind: 'check', text: line.substr(1).trim() };
-    if (line.trim() === '') return { kind: 'blank', text: '' };
-    return { kind: 'text', text: line.trim() };
-  });
-}
+    async function dataUrl(url) {
+      const blob = await fetch(url).then(r => r.blob());
+      return await new Promise(res => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result);
+        fr.readAsDataURL(blob);
+      });
+    }
 
-function wrap(ctx, text, maxW) {
-  const words = text.split(/\s+/);
-  const lines = [];
-  let cur = '';
-  for (const w of words) {
-    const test = cur ? cur + ' ' + w : w;
-    if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
-    else cur = test;
-  }
-  lines.push(cur);
-  return lines;
-}
+    // the foreignObject root does not inherit from <body>, so text falls back to
+    // serif unless the page's own font settings are carried over explicitly
+    const rootStyle = () => {
+      const cs = getComputedStyle(document.body);
+      return 'font-family:' + cs.fontFamily + ';font-size:' + cs.fontSize +
+             ';line-height:' + cs.lineHeight + ';color:' + cs.color + ';';
+    };
 
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
+    async function snapshot() {
+      const rect = shot.getBoundingClientRect();
+      const w = Math.ceil(rect.width), h = Math.ceil(rect.height);
 
-// Original mascot: a plain bent-wire paperclip with two dot eyes.
-function drawMascot(ctx, x, y, s) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(s, s);
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  const wire = () => {
-    ctx.beginPath();
-    ctx.moveTo(0.74, 0.30);
-    ctx.lineTo(0.74, 0.74);
-    ctx.bezierCurveTo(0.74, 0.94, 0.26, 0.94, 0.26, 0.74);
-    ctx.lineTo(0.26, 0.26);
-    ctx.bezierCurveTo(0.26, 0.09, 0.58, 0.09, 0.58, 0.26);
-    ctx.lineTo(0.58, 0.78);
-    ctx.bezierCurveTo(0.58, 0.87, 0.42, 0.87, 0.42, 0.78);
-    ctx.lineTo(0.42, 0.42);
-  };
-
-  ctx.strokeStyle = '#6f7781'; ctx.lineWidth = 0.105; wire(); ctx.stroke();
-  ctx.strokeStyle = '#c3cad2'; ctx.lineWidth = 0.068; wire(); ctx.stroke();
-  ctx.strokeStyle = '#eef2f6'; ctx.lineWidth = 0.022;
-  ctx.beginPath();
-  ctx.moveTo(0.715, 0.34); ctx.lineTo(0.715, 0.70);
-  ctx.stroke();
-
-  for (const ex of [0.40, 0.60]) {
-    ctx.beginPath(); ctx.arc(ex, 0.50, 0.085, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff'; ctx.fill();
-    ctx.lineWidth = 0.018; ctx.strokeStyle = '#4a5159'; ctx.stroke();
-    ctx.beginPath(); ctx.arc(ex + 0.012, 0.515, 0.038, 0, Math.PI * 2);
-    ctx.fillStyle = '#111111'; ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawControl(ctx, kind, cx, cy, f) {
-  const r = f * 0.36;
-  ctx.lineWidth = Math.max(1, f * 0.07);
-  ctx.strokeStyle = '#555';
-  ctx.fillStyle = '#fff';
-  if (kind === 'radio') {
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-  } else {
-    ctx.beginPath(); ctx.rect(cx - r, cy - r, r * 2, r * 2);
-    ctx.fill(); ctx.stroke();
-  }
-}
-
-function render(canvas, S, bg) {
-  const ctx = canvas.getContext('2d');
-  canvas.width = S; canvas.height = S;
-  ctx.clearRect(0, 0, S, S);
-  if (bg !== 'transparent') { ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S); }
-
-  const f = CFG.font * S;
-  const pad = CFG.pad * S;
-  const bw = CFG.bubbleW * S;
-  const lh = f * CFG.lh;
-  const indent = CFG.optIndent * S;
-  ctx.font = f + 'px system-ui, -apple-system, "Segoe UI", sans-serif';
-  ctx.textBaseline = 'alphabetic';
-
-  const rows = parseRows(guts.value);
-  const laid = [];
-  let textH = 0;
-  for (const row of rows) {
-    if (row.kind === 'blank') { laid.push({ ...row, lines: [], h: lh * CFG.gap }); textH += lh * CFG.gap; continue; }
-    const maxW = row.kind === 'text' ? bw - pad * 2 : bw - pad * 2 - indent;
-    const lines = wrap(ctx, row.text, maxW);
-    const h = lines.length * lh;
-    laid.push({ ...row, lines, h });
-    textH += h;
-  }
-
-  const bubbleH = textH + pad * 2;
-  const tail = S * 0.032;
-  const mh = CFG.mascotW * S;
-  const art0 = mascotImg || defaultImg;
-  const artH = art0 ? mh * (art0.height / art0.width) : mh;
-  const totalH = bubbleH + tail + artH * 0.88;
-  const bx = (S - bw) / 2;
-  let by = Math.max(S * 0.04, (S - totalH) / 2);
-
-  // bubble
-  ctx.fillStyle = CFG.bubbleFill;
-  roundRect(ctx, bx, by, bw, bubbleH, S * 0.014);
-  ctx.fill();
-  // tail
-  const tx = bx + bw * 0.16;
-  ctx.beginPath();
-  ctx.moveTo(tx, by + bubbleH - 1);
-  ctx.lineTo(tx + tail, by + bubbleH - 1);
-  ctx.lineTo(tx, by + bubbleH + tail);
-  ctx.closePath();
-  ctx.fill();
-
-  // text
-  let y = by + pad + f * 0.85;
-  ctx.fillStyle = CFG.ink;
-  for (const row of laid) {
-    if (row.kind === 'blank') { y += row.h; continue; }
-    const x0 = bx + pad + (row.kind === 'text' ? 0 : indent);
-    row.lines.forEach((line, i) => {
-      if (i === 0 && row.kind !== 'text') {
-        drawControl(ctx, row.kind, bx + pad + indent * 0.45, y - f * 0.32, f);
-        ctx.fillStyle = CFG.ink;
+      const clone = shot.cloneNode(true);
+      for (const img of clone.querySelectorAll('img')) {
+        img.removeAttribute('crossorigin');
+        img.setAttribute('src', await dataUrl(img.src));
       }
-      ctx.fillText(line, x0, y);
-      y += lh;
-    });
-  }
+      // checked state does not survive cloneNode's attribute copy
+      const live = shot.querySelectorAll('input');
+      clone.querySelectorAll('input').forEach((input, i) => {
+        if (live[i] && live[i].checked) input.setAttribute('checked', 'checked');
+      });
 
-  // mascot
-  const art = mascotImg || defaultImg;
-  const mx = bx + bw * 0.10;
-  const my = by + bubbleH + tail - mh * 0.12;
-  if (art) {
-    ctx.drawImage(art, mx, my, mh, mh * (art.height / art.width));
-  } else {
-    drawMascot(ctx, mx, my, mh);
-  }
-}
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+          '<foreignObject width="100%" height="100%">' +
+            '<div xmlns="http://www.w3.org/1999/xhtml" style="' + rootStyle() + '">' +
+              '<style>' + cssText() + '</style>' +
+              new XMLSerializer().serializeToString(clone) +
+            '</div>' +
+          '</foreignObject>' +
+        '</svg>';
 
-function update() {
-  render(stage, 1080, bgSel.value);
-}
+      const img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      await img.decode();
+      return { img, w, h };
+    }
 
-guts.addEventListener('input', update);
-bgSel.addEventListener('change', update);
+    async function download() {
+      status.textContent = 'rendering...';
+      try {
+        const S = parseInt(document.getElementById('size').value, 10);
+        const bg = document.getElementById('bg').value;
+        const { img, w, h } = await snapshot();
 
-mascotInput.addEventListener('change', () => {
-  const file = mascotInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => { mascotImg = img; update(); };
-    img.src = reader.result;           // data URL keeps the canvas untainted
-  };
-  reader.readAsDataURL(file);
-});
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = S;
+        const ctx = canvas.getContext('2d');
+        if (bg !== 'transparent') { ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S); }
 
-document.getElementById('clearmascot').addEventListener('click', () => {
-  mascotImg = null; mascotInput.value = ''; update();
-});
+        const scale = (S * 0.92) / Math.max(w, h);
+        const dw = w * scale, dh = h * scale;
+        ctx.drawImage(img, (S - dw) / 2, (S - dh) / 2, dw, dh);
 
-document.getElementById('download').addEventListener('click', () => {
-  const S = parseInt(sizeSel.value, 10);
-  const out = document.createElement('canvas');
-  render(out, S, bgSel.value);
-  out.toBlob(blob => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'assistant-meme-' + S + '.png';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  }, 'image/png');
-});
+        await new Promise(res => canvas.toBlob(blob => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'clippy-' + S + '.png';
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+          res();
+        }, 'image/png'));
+        status.textContent = S + '×' + S + ' saved';
+      } catch (err) {
+        status.textContent = 'export failed: ' + err.message;
+        console.error(err);
+      }
+    }
 
-update();
-</script>
+    document.getElementById('download').addEventListener('click', download);
+  </script>
 </body>
 </html>
