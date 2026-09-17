@@ -166,6 +166,27 @@ _ Don't show me this tip again
     }
 
     update();
+
+    // A native radio cannot be un-picked by clicking it again. Remember its
+    // state at pointerdown (the label text counts too) and, if it was already
+    // on, clear it after the click has set it. Radios here carry no name, as
+    // upstream, so each one toggles on its own.
+    const radioFor = target => {
+        const label = target.closest && target.closest('label.option');
+        const input = label && label.querySelector('input[type=radio]');
+        return input || null;
+    };
+    window.speech.addEventListener('pointerdown', e => {
+        const r = radioFor(e.target);
+        if (r) r.dataset.was = r.checked ? '1' : '';
+    });
+    window.speech.addEventListener('click', e => {
+        // a label click arrives twice: once on the text, then a synthetic one
+        // on the input after the browser has set it; only the latter counts
+        if (e.target.type !== 'radio') return;
+        const r = e.target;
+        if (r.dataset.was === '1') { r.checked = false; r.dataset.was = ''; }
+    });
   </script>
 
   <script>
