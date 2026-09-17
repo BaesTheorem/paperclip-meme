@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>office assistant meme generator</title>
+<style>
+  :root {
+    --surface: #fbf8f4;
+    --surface-2: #f2ede6;
+    --outline: #c8c2b8;
+    --on-surface: #1c1b19;
+    --accent: #3b5f8a;
+  }
+  * { box-sizing: border-box; border-radius: 0 !important; }
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .content { max-width: 1000px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin: 28px 0 8px; }
+  p.hint { margin: 0 0 16px; color: #5c574e; }
+  .cols { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .col { flex: 1 1 380px; min-width: 320px; }
+  canvas#stage {
+    width: 100%; max-width: 480px; display: block;
+    border: 1px solid var(--outline);
+    background-image: linear-gradient(45deg, #e6e1d9 25%, transparent 25%, transparent 75%, #e6e1d9 75%),
+                      linear-gradient(45deg, #e6e1d9 25%, transparent 25%, transparent 75%, #e6e1d9 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 8px 8px;
+  }
+  textarea {
+    width: 100%; height: 230px; padding: 10px;
+    border: 1px solid var(--outline); background: #fff; color: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.5;
+    resize: vertical;
+  }
+  textarea:focus, select:focus, button:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #5c574e; }
+  select, button, input[type=file]::file-selector-button {
+    border: 1px solid var(--outline); background: var(--surface-2); color: inherit;
+    padding: 8px 12px; font: inherit; cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  button:active { transform: translateY(1px); }
+  pre.example { background: var(--surface-2); border: 1px solid var(--outline); padding: 12px; overflow-x: auto; font-size: 13px; }
+  .note { font-size: 13px; color: #5c574e; }
+  a { color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) { button { transition: none; } }
+</style>
+</head>
+<body>
+<div class="content">
+  <h1>office assistant meme generator</h1>
+  <p class="hint">Type below. The image updates as you type, and downloads as a square PNG.</p>
+
+  <div class="cols">
+    <div class="col">
+      <canvas id="stage" width="1080" height="1080"></canvas>
+      <div class="row">
+        <button class="primary" id="download">Download square PNG</button>
+        <label class="field">size
+          <select id="size">
+            <option value="540">540</option>
+            <option value="1080" selected>1080</option>
+            <option value="2160">2160</option>
+          </select>
+        </label>
+        <label class="field">background
+          <select id="bg">
+            <option value="#ffffff" selected>white</option>
+            <option value="#1c1b19">black</option>
+            <option value="transparent">transparent</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field">mascot image (optional)
+          <input type="file" id="mascot" accept="image/*">
+        </label>
+        <button id="clearmascot">use built-in</button>
+      </div>
+    </div>
+
+    <div class="col">
+      <h2>customize text and options</h2>
+      <textarea id="guts" spellcheck="false">It looks like you're writing a letter.
+
+Would you like help?
+
+* Get help with writing the letter
+* Just type the letter without help
+_ Don't show me this tip again
+</textarea>
+      <p class="note">Lines starting with <code>*</code> become radio buttons, <code>_</code> becomes a checkbox. Blank lines are spacing.</p>
+
+      <h2>example</h2>
+<pre class="example">It looks like you are about to make a
+horrible life decision.
+
+Would you like help?
+
+* Reconsider my options
+* Construct a transparent rationalization
+* Learn to live with regret
+_ Don't show me this tip again</pre>
+      <p class="note">Local clone of <a href="https://kirk.is/tools/clippy/">kirk.is/tools/clippy</a>, with PNG export. The mascot here is an original drawing, not the Microsoft character; load your own art with the file picker if you want something else.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const stage = document.getElementById('stage');
+const guts = document.getElementById('guts');
+const sizeSel = document.getElementById('size');
+const bgSel = document.getElementById('bg');
+const mascotInput = document.getElementById('mascot');
+
+let mascotImg = null;
+
+const CFG = {
+  bubbleW: 0.66,
+  pad: 0.035,
+  font: 0.034,
+  lh: 1.42,
+  optIndent: 0.062,
+  gap: 0.35,       // blank-line height, in text lines
+  mascot: 0.30,
+  bubbleFill: '#EEEE77',
+  ink: '#111111',
+};
+
+function parseRows(src) {
+  return src.replace(/\s+$/, '').split('\n').map(line => {
+    const c = line.substr(0, 1);
+    if (c === '*') return { kind: 'radio', text: line.substr(1).trim() };
+    if (c === '_') return { kind: 'check', text: line.substr(1).trim() };
+    if (line.trim() === '') return { kind: 'blank', text: '' };
+    return { kind: 'text', text: line.trim() };
+  });
+}
+
+function wrap(ctx, text, maxW) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  lines.push(cur);
+  return lines;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Original mascot: a plain bent-wire paperclip with two dot eyes.
+function drawMascot(ctx, x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const wire = () => {
+    ctx.beginPath();
+    ctx.moveTo(0.74, 0.30);
+    ctx.lineTo(0.74, 0.74);
+    ctx.bezierCurveTo(0.74, 0.94, 0.26, 0.94, 0.26, 0.74);
+    ctx.lineTo(0.26, 0.26);
+    ctx.bezierCurveTo(0.26, 0.09, 0.58, 0.09, 0.58, 0.26);
+    ctx.lineTo(0.58, 0.78);
+    ctx.bezierCurveTo(0.58, 0.87, 0.42, 0.87, 0.42, 0.78);
+    ctx.lineTo(0.42, 0.42);
+  };
+
+  ctx.strokeStyle = '#6f7781'; ctx.lineWidth = 0.105; wire(); ctx.stroke();
+  ctx.strokeStyle = '#c3cad2'; ctx.lineWidth = 0.068; wire(); ctx.stroke();
+  ctx.strokeStyle = '#eef2f6'; ctx.lineWidth = 0.022;
+  ctx.beginPath();
+  ctx.moveTo(0.715, 0.34); ctx.lineTo(0.715, 0.70);
+  ctx.stroke();
+
+  for (const ex of [0.40, 0.60]) {
+    ctx.beginPath(); ctx.arc(ex, 0.50, 0.085, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff'; ctx.fill();
+    ctx.lineWidth = 0.018; ctx.strokeStyle = '#4a5159'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(ex + 0.012, 0.515, 0.038, 0, Math.PI * 2);
+    ctx.fillStyle = '#111111'; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawControl(ctx, kind, cx, cy, f) {
+  const r = f * 0.36;
+  ctx.lineWidth = Math.max(1, f * 0.07);
+  ctx.strokeStyle = '#555';
+  ctx.fillStyle = '#fff';
+  if (kind === 'radio') {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.rect(cx - r, cy - r, r * 2, r * 2);
+    ctx.fill(); ctx.stroke();
+  }
+}
+
+function render(canvas, S, bg) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = S; canvas.height = S;
+  ctx.clearRect(0, 0, S, S);
+  if (bg !== 'transparent') { ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S); }
+
+  const f = CFG.font * S;
+  const pad = CFG.pad * S;
+  const bw = CFG.bubbleW * S;
+  const lh = f * CFG.lh;
+  const indent = CFG.optIndent * S;
+  ctx.font = f + 'px system-ui, -apple-system, "Segoe UI", sans-serif';
+  ctx.textBaseline = 'alphabetic';
+
+  const rows = parseRows(guts.value);
+  const laid = [];
+  let textH = 0;
+  for (const row of rows) {
+    if (row.kind === 'blank') { laid.push({ ...row, lines: [], h: lh * CFG.gap }); textH += lh * CFG.gap; continue; }
+    const maxW = row.kind === 'text' ? bw - pad * 2 : bw - pad * 2 - indent;
+    const lines = wrap(ctx, row.text, maxW);
+    const h = lines.length * lh;
+    laid.push({ ...row, lines, h });
+    textH += h;
+  }
+
+  const bubbleH = textH + pad * 2;
+  const tail = S * 0.032;
+  const mh = CFG.mascot * S;
+  const totalH = bubbleH + tail + mh * 0.86;
+  const bx = (S - bw) / 2;
+  let by = Math.max(S * 0.04, (S - totalH) / 2);
+
+  // bubble
+  ctx.fillStyle = CFG.bubbleFill;
+  roundRect(ctx, bx, by, bw, bubbleH, S * 0.014);
+  ctx.fill();
+  // tail
+  const tx = bx + bw * 0.16;
+  ctx.beginPath();
+  ctx.moveTo(tx, by + bubbleH - 1);
+  ctx.lineTo(tx + tail, by + bubbleH - 1);
+  ctx.lineTo(tx, by + bubbleH + tail);
+  ctx.closePath();
+  ctx.fill();
+
+  // text
+  let y = by + pad + f * 0.85;
+  ctx.fillStyle = CFG.ink;
+  for (const row of laid) {
+    if (row.kind === 'blank') { y += row.h; continue; }
+    const x0 = bx + pad + (row.kind === 'text' ? 0 : indent);
+    row.lines.forEach((line, i) => {
+      if (i === 0 && row.kind !== 'text') {
+        drawControl(ctx, row.kind, bx + pad + indent * 0.45, y - f * 0.32, f);
+        ctx.fillStyle = CFG.ink;
+      }
+      ctx.fillText(line, x0, y);
+      y += lh;
+    });
+  }
+
+  // mascot
+  const mx = bx + bw * 0.10;
+  const my = by + bubbleH + tail - mh * 0.10;
+  if (mascotImg) {
+    const ar = mascotImg.width / mascotImg.height;
+    const w = ar >= 1 ? mh : mh * ar;
+    const h = ar >= 1 ? mh / ar : mh;
+    ctx.drawImage(mascotImg, mx, my + (mh - h) / 2, w, h);
+  } else {
+    drawMascot(ctx, mx, my, mh);
+  }
+}
+
+function update() {
+  render(stage, 1080, bgSel.value);
+}
+
+guts.addEventListener('input', update);
+bgSel.addEventListener('change', update);
+
+mascotInput.addEventListener('change', () => {
+  const file = mascotInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => { mascotImg = img; update(); };
+    img.src = reader.result;           // data URL keeps the canvas untainted
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('clearmascot').addEventListener('click', () => {
+  mascotImg = null; mascotInput.value = ''; update();
+});
+
+document.getElementById('download').addEventListener('click', () => {
+  const S = parseInt(sizeSel.value, 10);
+  const out = document.createElement('canvas');
+  render(out, S, bgSel.value);
+  out.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'assistant-meme-' + S + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }, 'image/png');
+});
+
+update();
+</script>
+</body>
+</html>

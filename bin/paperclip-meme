@@ -1,0 +1,5 @@
+#!/bin/sh
+# Open the office-assistant meme generator in the default browser.
+set -e
+dir=$(cd "$(dirname "$0")/.." && pwd)
+exec open "file://$dir/index.html"
