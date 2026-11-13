@@ -14,13 +14,12 @@ The page is the original's markup, CSS and `update()`/`fixup()` script, unchange
     bin/fetch-mascot    downloads clippy.webp from the source tool
     bin/build-site      assembles the Pages site (page, manifest, art, icons) in _site/
     manifest.webmanifest  makes the page installable to a home screen
-    bin/serve           static server on 127.0.0.1:5031
+    bin/serve           static server on 127.0.0.1:5031, for local work on the page
     bin/paperclip-meme  serve + open in the browser
     scripts/make-icon.py  1024 iOS icon + Mac .icns from clippy.webp (gitignored outputs)
-    launchd/            agent that runs bin/serve for the Mac app
     ios/                XcodeGen project for the iPhone app
 
-## Web
+## Local
 
     bin/fetch-mascot          # once
     bin/paperclip-meme        # serves and opens http://127.0.0.1:5031/
@@ -41,21 +40,17 @@ download.
 
 ## Mac app
 
-`/Applications/Clippy Meme.app`, built with the harness `app-shell/build-app.sh`:
+`/Applications/Clippy Meme.app` is the harness app shell (a WKWebView) pointed at the Pages
+site, built with `app-shell/build-app.sh`:
 
-    cp launchd/com.exobrain.paperclip-meme.plist ~/Library/LaunchAgents/
-    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.exobrain.paperclip-meme.plist
     python3 scripts/make-icon.py
-    "$HARNESS/app-shell/build-app.sh" "Clippy Meme" paperclip-meme http://127.0.0.1:5031/ \
-        com.exobrain.paperclip-meme --plist ~/Library/LaunchAgents/com.exobrain.paperclip-meme.plist \
-        --log ~/Library/Logs/exobrain/paperclip-meme.log --icon build/AppIcon.icns
+    "$HARNESS/app-shell/build-app.sh" "Clippy Meme" paperclip-meme \
+        https://baestheorem.github.io/paperclip-meme/ "" --icon build/AppIcon.icns
 
-The launchd job runs `bin/serve` through `/bin/bash`: a bare `/usr/bin/python3` in
-`ProgramArguments` cannot read `~/Documents` under launchd (TCC), bash holds the grant and
-python inherits it. The app kickstarts that job, waits for the port, and opens the page in a
-WKWebView. Download goes through `window.pywebview.api.save_file` into `~/Downloads`, since
-an `<a download>` click inside WKWebView routes through a modal save panel whose download
-then reads the blob too late.
+Download goes through `window.pywebview.api.save_file` into `~/Downloads`, since an
+`<a download>` click inside WKWebView routes through a modal save panel whose download then
+reads the blob too late. The app used to load a local server on port 5031 that a launchd job
+kept; the Pages site replaced both.
 
 ## iPhone app
 
