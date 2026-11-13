@@ -11,10 +11,12 @@ Rules that matter (learned on the Study Bible icon):
   * No alpha in a home-screen icon; paint the background explicitly.
 
 Run from the repo root:  python3 scripts/make-icon.py
+With --web DIR it writes only the web app icons into DIR (no macOS tools needed).
 """
 
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -53,10 +55,21 @@ def write_icns(icon: Image.Image) -> None:
         subprocess.run(["iconutil", "-c", "icns", str(iconset), "-o", str(MAC_ICNS)], check=True)
 
 
+def write_web(icon: Image.Image, out: Path) -> None:
+    """Icons for the web app: the two manifest sizes and the iOS home-screen one."""
+    out.mkdir(parents=True, exist_ok=True)
+    for name, px in (("icon-192.png", 192), ("icon-512.png", 512), ("apple-touch-icon.png", 180)):
+        icon.resize((px, px), Image.LANCZOS).save(out / name, "PNG")
+    print(f"wrote web icons to {out}")
+
+
 def main() -> None:
     if not SOURCE.exists():
         raise SystemExit("clippy.webp is missing; run bin/fetch-mascot first")
     icon = compose()
+    if len(sys.argv) == 3 and sys.argv[1] == "--web":
+        write_web(icon, Path(sys.argv[2]))
+        return
     IOS_PNG.parent.mkdir(parents=True, exist_ok=True)
     icon.save(IOS_PNG, "PNG")
     write_icns(icon)

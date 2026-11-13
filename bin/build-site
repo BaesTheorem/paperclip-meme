@@ -1,0 +1,15 @@
+#!/bin/sh
+# Assemble the static site that GitHub Pages serves.
+#
+# The mascot art and the icons made from it stay out of git, so the site is
+# built: this script pulls the art if it is missing, then copies the page, the
+# manifest, the art and the icons into one folder (default _site/).
+set -e
+dir=$(cd "$(dirname "$0")/.." && pwd)
+out=${1:-$dir/_site}
+[ -f "$dir/clippy.webp" ] || "$dir/bin/fetch-mascot"
+rm -rf "$out"
+mkdir -p "$out"
+cp "$dir/index.html" "$dir/manifest.webmanifest" "$dir/clippy.webp" "$out/"
+python3 "$dir/scripts/make-icon.py" --web "$out"
+echo "site: $out"

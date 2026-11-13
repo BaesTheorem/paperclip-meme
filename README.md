@@ -12,6 +12,8 @@ The page is the original's markup, CSS and `update()`/`fixup()` script, unchange
     index.html          the generator (the whole tool)
     clippy.webp         mascot art, pulled by bin/fetch-mascot, gitignored
     bin/fetch-mascot    downloads clippy.webp from the source tool
+    bin/build-site      assembles the Pages site (page, manifest, art, icons) in _site/
+    manifest.webmanifest  makes the page installable to a home screen
     bin/serve           static server on 127.0.0.1:5031
     bin/paperclip-meme  serve + open in the browser
     scripts/make-icon.py  1024 iOS icon + Mac .icns from clippy.webp (gitignored outputs)
@@ -25,6 +27,17 @@ The page is the original's markup, CSS and `update()`/`fixup()` script, unchange
 
 Served over HTTP rather than opened as a `file://` path on purpose: the export reads the
 image back as a data URL, and both `fetch()` and canvas export are blocked on `file://`.
+
+## GitHub Pages
+
+`.github/workflows/pages.yml` runs `bin/build-site` and deploys `_site/`. The site is built
+and not served from the branch because the mascot art and the icons made from it stay out of
+git: the workflow pulls the art from the source tool on each deploy. All paths in the page
+are relative, so it works under the `/<repo>/` prefix that Pages uses.
+
+On a phone or tablet the download button opens the share sheet (Save Image, Messages), since
+a plain download there lands in Files. A browser with no file sharing falls back to the
+download.
 
 ## Mac app
 

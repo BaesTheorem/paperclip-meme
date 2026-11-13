@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>clippy joke meme generator</title>
+<meta name="theme-color" content="#EEEE77">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 body {
     background-color: white;
@@ -278,6 +282,22 @@ _ Don't show me this tip again
           native.postMessage({ name: 'clippy-' + S + '.png', dataUrl: canvas.toDataURL('image/png') });
           status.textContent = S + '\u00d7' + S + ' ready';
           return;
+        }
+        // On a phone or tablet, the share sheet is the way to the photo
+        // library; a plain download lands in Files. Any failure other than
+        // a dismissed sheet falls through to the download below.
+        if (matchMedia('(pointer: coarse)').matches && navigator.canShare) {
+          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+          const file = new File([blob], 'clippy-' + S + '.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({ files: [file] });
+              status.textContent = S + '\u00d7' + S + ' shared';
+              return;
+            } catch (err) {
+              if (err.name === 'AbortError') { status.textContent = ''; return; }
+            }
+          }
         }
         await new Promise(res => canvas.toBlob(blob => {
           const a = document.createElement('a');
